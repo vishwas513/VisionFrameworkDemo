@@ -33,10 +33,11 @@ A modern iOS app demonstrating Apple's Vision framework capabilities with on-dev
 ## 📱 Screenshots
 
 ### Main Menu
-![Main Menu](Screenshot%202025-10-26%20at%205.18.33%20PM.png)
+![Main Menu](image1.png)
 
 ### Body Pose Detection in Action
-![Body Pose Detection](Screenshot%202025-10-26%20at%205.19.51%20PM.png)
+![Body Pose Detection](image2.png)
+
 
 ## 🏗️ Architecture
 
