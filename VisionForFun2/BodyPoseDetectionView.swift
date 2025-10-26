@@ -13,8 +13,7 @@ struct BodyPoseDetectionView: View {
     @State private var isProcessing: Bool = false
     @State private var capturedImage: UIImage? = nil
     @State private var processedImage: UIImage? = nil
-    @State private var showImagePicker: Bool = false
-    @State private var imageSourceType: UIImagePickerController.SourceType = .camera
+    @State private var imageSourceType: UIImagePickerController.SourceType? = nil
     @State private var detectedPeopleCount: Int = 0
     @Environment(\.colorScheme) var colorScheme
 
@@ -37,12 +36,16 @@ struct BodyPoseDetectionView: View {
         }
         .navigationTitle("Body Pose Detection")
         .navigationBarTitleDisplayMode(.inline)
-        .sheet(isPresented: $showImagePicker) {
-            ImagePicker(sourceType: imageSourceType) { image in
+        .sheet(item: Binding(
+            get: { imageSourceType.map { SourceTypeWrapper(sourceType: $0) } },
+            set: { imageSourceType = $0?.sourceType }
+        )) { wrapper in
+            ImagePicker(sourceType: wrapper.sourceType) { image in
                 capturedImage = image
                 processedImage = nil
                 detectedPeopleCount = 0
                 status = "Image captured - Ready to detect poses"
+                imageSourceType = nil
             }
         }
     }
@@ -99,7 +102,6 @@ struct BodyPoseDetectionView: View {
         HStack(spacing: 12) {
             Button(action: {
                 imageSourceType = .camera
-                showImagePicker = true
             }) {
                 HStack {
                     Image(systemName: "camera.fill")
@@ -113,7 +115,6 @@ struct BodyPoseDetectionView: View {
             
             Button(action: {
                 imageSourceType = .photoLibrary
-                showImagePicker = true
             }) {
                 HStack {
                     Image(systemName: "photo.fill")

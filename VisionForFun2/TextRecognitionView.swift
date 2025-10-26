@@ -13,8 +13,7 @@ struct TextRecognitionView: View {
     @State private var status: String = "Ready - Tap to capture or select an image"
     @State private var isProcessing: Bool = false
     @State private var capturedImage: UIImage? = nil
-    @State private var showImagePicker: Bool = false
-    @State private var imageSourceType: UIImagePickerController.SourceType = .camera
+    @State private var imageSourceType: UIImagePickerController.SourceType? = nil
     @Environment(\.colorScheme) var colorScheme
 
     var body: some View {
@@ -36,11 +35,15 @@ struct TextRecognitionView: View {
         }
         .navigationTitle("Text Recognition")
         .navigationBarTitleDisplayMode(.inline)
-        .sheet(isPresented: $showImagePicker) {
-            ImagePicker(sourceType: imageSourceType) { image in
+        .sheet(item: Binding(
+            get: { imageSourceType.map { SourceTypeWrapper(sourceType: $0) } },
+            set: { imageSourceType = $0?.sourceType }
+        )) { wrapper in
+            ImagePicker(sourceType: wrapper.sourceType) { image in
                 capturedImage = image
                 status = "Image captured - Ready to recognize text"
                 recognizedText = ""
+                imageSourceType = nil
             }
         }
     }
@@ -97,7 +100,6 @@ struct TextRecognitionView: View {
         HStack(spacing: 12) {
             Button(action: {
                 imageSourceType = .camera
-                showImagePicker = true
             }) {
                 HStack {
                     Image(systemName: "camera.fill")
@@ -111,7 +113,6 @@ struct TextRecognitionView: View {
             
             Button(action: {
                 imageSourceType = .photoLibrary
-                showImagePicker = true
             }) {
                 HStack {
                     Image(systemName: "photo.fill")

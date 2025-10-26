@@ -8,6 +8,15 @@
 import SwiftUI
 import UIKit
 
+// MARK: - Source Type Wrapper
+
+struct SourceTypeWrapper: Identifiable {
+    let id = UUID()
+    let sourceType: UIImagePickerController.SourceType
+}
+
+// MARK: - Image Picker
+
 struct ImagePicker: UIViewControllerRepresentable {
     let sourceType: UIImagePickerController.SourceType
     let onImagePicked: (UIImage) -> Void
