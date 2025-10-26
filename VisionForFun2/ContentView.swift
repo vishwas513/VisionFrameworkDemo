@@ -6,264 +6,154 @@
 //
 
 import SwiftUI
-import Vision
-import PhotosUI
 
 struct ContentView: View {
-    @State private var recognizedText: String = ""
-    @State private var status: String = "Ready - Tap to capture or select an image"
-    @State private var isProcessing: Bool = false
-    @State private var capturedImage: UIImage? = nil
-    @State private var showImagePicker: Bool = false
-    @State private var imageSourceType: UIImagePickerController.SourceType = .camera
     @Environment(\.colorScheme) var colorScheme
-
+    
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 20) {
-                    // Image Preview Section
-                    VStack(spacing: 12) {
-                        Text("Image Preview")
-                            .font(.headline)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                        
-                        if let image = capturedImage {
-                            Image(uiImage: image)
-                                .resizable()
-                                .scaledToFit()
-                                .frame(maxHeight: 300)
-                                .clipShape(RoundedRectangle(cornerRadius: 16))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 16)
-                                        .stroke(colorScheme == .dark ? Color.gray.opacity(0.3) : Color.gray.opacity(0.2), lineWidth: 1)
-                                )
-                                .shadow(color: colorScheme == .dark ? .black.opacity(0.5) : .black.opacity(0.1), radius: 8, x: 0, y: 4)
-                                .accessibilityLabel("Captured image preview")
-                        } else {
-                            // Placeholder
-                            VStack(spacing: 16) {
-                                Image(systemName: "photo.on.rectangle.angled")
-                                    .font(.system(size: 60))
-                                    .foregroundStyle(.secondary)
-                                
-                                Text("No image selected")
-                                    .font(.subheadline)
-                                    .foregroundStyle(.secondary)
-                            }
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 300)
-                            .background(
-                                RoundedRectangle(cornerRadius: 16)
-                                    .fill(colorScheme == .dark ? Color(.systemGray6) : Color(.systemGray6))
-                            )
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 16)
-                                    .stroke(colorScheme == .dark ? Color.gray.opacity(0.3) : Color.gray.opacity(0.2), lineWidth: 1)
+                VStack(spacing: 24) {
+                    // Header
+                    headerSection
+                    
+                    // Feature Cards
+                    VStack(spacing: 16) {
+                        NavigationLink(destination: TextRecognitionView()) {
+                            FeatureCard(
+                                icon: "doc.text.viewfinder",
+                                title: "Text Recognition",
+                                description: "Extract and recognize text from images using Vision framework",
+                                gradient: [.blue, .cyan]
                             )
                         }
+                        .buttonStyle(PlainButtonStyle())
+                        
+                        NavigationLink(destination: BodyPoseDetectionView()) {
+                            FeatureCard(
+                                icon: "figure.walk.motion",
+                                title: "Body Pose Detection",
+                                description: "Detect and track human body poses with skeleton overlay",
+                                gradient: [.green, .mint]
+                            )
+                        }
+                        .buttonStyle(PlainButtonStyle())
                     }
                     
-                    // Action Buttons
-                    HStack(spacing: 12) {
-                        Button(action: {
-                            imageSourceType = .camera
-                            showImagePicker = true
-                        }) {
-                            HStack {
-                                Image(systemName: "camera.fill")
-                                Text("Camera")
-                            }
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 12)
-                        }
-                        .buttonStyle(.bordered)
-                        .tint(.blue)
-                        
-                        Button(action: {
-                            imageSourceType = .photoLibrary
-                            showImagePicker = true
-                        }) {
-                            HStack {
-                                Image(systemName: "photo.fill")
-                                Text("Library")
-                            }
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 12)
-                        }
-                        .buttonStyle(.bordered)
-                        .tint(.blue)
-                    }
-                    
-                    // Recognition Button
-                    Button(action: runTextRecognition) {
-                        HStack(spacing: 8) {
-                            if isProcessing {
-                                ProgressView()
-                                    .tint(.white)
-                            } else {
-                                Image(systemName: "text.viewfinder")
-                            }
-                            Text(isProcessing ? "Recognizing…" : "Recognize Text")
-                                .bold()
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 12)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .disabled(isProcessing || capturedImage == nil)
-                    .accessibilityLabel("Run Vision text recognition")
-                    
-                    // Status and Results Section
-                    VStack(alignment: .leading, spacing: 12) {
-                        HStack {
-                            Image(systemName: "info.circle.fill")
-                                .foregroundStyle(.secondary)
-                            Text(status)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                        
-                        Divider()
-                        
-                        Text("Recognized Text")
-                            .font(.headline)
-                        
-                        if recognizedText.isEmpty {
-                            Text("No text recognized yet")
-                                .foregroundStyle(.secondary)
-                                .italic()
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding()
-                                .background(
-                                    RoundedRectangle(cornerRadius: 12)
-                                        .fill(colorScheme == .dark ? Color(.systemGray6) : Color(.systemGray6))
-                                )
-                        } else {
-                            ScrollView {
-                                Text(recognizedText)
-                                    .textSelection(.enabled)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .padding()
-                            }
-                            .frame(maxHeight: 200)
-                            .background(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .fill(colorScheme == .dark ? Color(.systemGray6) : Color(.systemGray6))
-                            )
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .stroke(colorScheme == .dark ? Color.gray.opacity(0.3) : Color.gray.opacity(0.2), lineWidth: 1)
-                            )
-                        }
-                    }
-                    .padding()
-                    .background(
-                        RoundedRectangle(cornerRadius: 16)
-                            .fill(colorScheme == .dark ? Color(.systemGray5).opacity(0.5) : Color(.systemGray6).opacity(0.5))
-                    )
+                    // Info Section
+                    infoSection
                 }
                 .padding()
             }
-            .navigationTitle("Vision Text Recognition")
-            .navigationBarTitleDisplayMode(.inline)
-            .sheet(isPresented: $showImagePicker) {
-                ImagePicker(sourceType: imageSourceType) { image in
-                    capturedImage = image
-                    status = "Image captured - Ready to recognize text"
-                    recognizedText = ""
-                }
-            }
+            .navigationTitle("Vision Demos")
+            .navigationBarTitleDisplayMode(.large)
         }
     }
-
-    // MARK: - Vision Text Recognition
-
-    private func runTextRecognition() {
-        guard let uiImage = capturedImage, let cgImage = uiImage.cgImage else {
-            status = "No suitable image available"
-            recognizedText = ""
-            return
+    
+    // MARK: - View Components
+    
+    private var headerSection: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "eye.fill")
+                .font(.system(size: 60))
+                .foregroundStyle(
+                    LinearGradient(
+                        colors: [.blue, .purple],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+            
+            Text("Vision Framework Demos")
+                .font(.title2)
+                .bold()
+            
+            Text("Explore on-device computer vision capabilities")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
         }
-
-        isProcessing = true
-        status = "Running VNRecognizeTextRequest…"
-        recognizedText = ""
-
-        // Configure request
-        let request = VNRecognizeTextRequest { request, error in
-            DispatchQueue.main.async {
-                isProcessing = false
-                if let error = error {
-                    status = "Failed: \(error.localizedDescription)"
-                    return
-                }
-
-                let observations = (request.results as? [VNRecognizedTextObservation]) ?? []
-                let lines: [String] = observations.compactMap { obs in
-                    // Highest confidence candidate per observation
-                    obs.topCandidates(1).first?.string
-                }
-                recognizedText = lines.joined(separator: "\n")
-                status = lines.isEmpty ? "Completed: No text found" : "Completed: \(lines.count) line(s) recognized"
+        .padding(.vertical, 20)
+    }
+    
+    private var infoSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Image(systemName: "info.circle.fill")
+                    .foregroundStyle(.blue)
+                Text("About")
+                    .font(.headline)
             }
+            
+            Text("All processing happens on-device using Apple's Vision framework. No data is sent to external servers.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
-
-        request.recognitionLevel = .accurate
-        request.usesLanguageCorrection = true
-        request.minimumTextHeight = 0.02 // Helps small text in larger images
-
-        let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
-        DispatchQueue.global(qos: .userInitiated).async {
-            do {
-                try handler.perform([request])
-            } catch {
-                DispatchQueue.main.async {
-                    isProcessing = false
-                    status = "Failed to perform request: \(error.localizedDescription)"
-                }
-            }
-        }
+        .padding()
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(colorScheme == .dark ? Color(.systemGray6).opacity(0.5) : Color(.systemGray6).opacity(0.8))
+        )
     }
 }
 
-// MARK: - Image Picker Wrapper
+// MARK: - Feature Card Component
 
-struct ImagePicker: UIViewControllerRepresentable {
-    let sourceType: UIImagePickerController.SourceType
-    let onImagePicked: (UIImage) -> Void
-    @Environment(\.presentationMode) var presentationMode
+struct FeatureCard: View {
+    let icon: String
+    let title: String
+    let description: String
+    let gradient: [Color]
+    @Environment(\.colorScheme) var colorScheme
     
-    func makeUIViewController(context: Context) -> UIImagePickerController {
-        let picker = UIImagePickerController()
-        picker.sourceType = sourceType
-        picker.delegate = context.coordinator
-        return picker
-    }
-    
-    func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {}
-    
-    func makeCoordinator() -> Coordinator {
-        Coordinator(self)
-    }
-    
-    class Coordinator: NSObject, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
-        let parent: ImagePicker
-        
-        init(_ parent: ImagePicker) {
-            self.parent = parent
-        }
-        
-        func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
-            if let image = info[.originalImage] as? UIImage {
-                parent.onImagePicked(image)
+    var body: some View {
+        HStack(spacing: 16) {
+            // Icon
+            ZStack {
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(
+                        LinearGradient(
+                            colors: gradient,
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(width: 60, height: 60)
+                
+                Image(systemName: icon)
+                    .font(.system(size: 28))
+                    .foregroundStyle(.white)
             }
-            parent.presentationMode.wrappedValue.dismiss()
+            
+            // Content
+            VStack(alignment: .leading, spacing: 6) {
+                Text(title)
+                    .font(.headline)
+                    .foregroundStyle(colorScheme == .dark ? .white : .black)
+                
+                Text(description)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+            }
+            
+            Spacer()
+            
+            // Chevron
+            Image(systemName: "chevron.right")
+                .foregroundStyle(.secondary)
+                .font(.system(size: 14, weight: .semibold))
         }
-        
-        func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
-            parent.presentationMode.wrappedValue.dismiss()
-        }
+        .padding()
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(colorScheme == .dark ? Color(.systemGray6) : .white)
+                .shadow(color: colorScheme == .dark ? .clear : .black.opacity(0.05), radius: 8, x: 0, y: 2)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(colorScheme == .dark ? Color.gray.opacity(0.3) : Color.clear, lineWidth: 1)
+        )
     }
 }
 
